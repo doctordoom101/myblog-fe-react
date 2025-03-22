@@ -9,7 +9,7 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
-            <Link to="/" className="text-xl font-bold">Blog Platform</Link>
+            <Link to="/" className="text-xl font-bold">MyBlog</Link>
             <p className="text-gray-400 mt-2">Share your thoughts with the world</p>
           </div>
           
@@ -21,7 +21,7 @@ const Footer = () => {
         </div>
         
         <div className="mt-8 pt-6 border-t border-gray-700 text-center text-gray-400">
-          <p>&copy; {currentYear} Blog Platform. All rights reserved.</p>
+          <p>&copy; {currentYear} MyBlog. All rights reserved.</p>
         </div>
       </div>
     </footer>

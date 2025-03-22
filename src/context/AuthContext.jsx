@@ -1,74 +1,71 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import { authService } from '../services/auth';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import authService from '../services/auth';
 
-const AuthContext = createContext();
+// Buat context
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
+  
+  // Cek apakah user terautentikasi saat aplikasi load
   useEffect(() => {
-    const loadUser = async () => {
+    const initAuth = async () => {
+      setLoading(true);
       if (authService.isAuthenticated()) {
         try {
           const userData = await authService.getCurrentUser();
           setCurrentUser(userData);
-        } catch (err) {
-          console.error("Failed to load user", err);
+        } catch (error) {
+          console.error('Failed to get user data:', error);
           authService.logout();
         }
       }
       setLoading(false);
     };
-
-    loadUser();
+    
+    initAuth();
   }, []);
-
+  
+  // Register function
+  const register = async (username, email, password, passwordConfirm) => {
+    try {
+      await authService.register(username, email, password, passwordConfirm);
+      return true;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
+  };
+  
+  // Login function
   const login = async (email, password) => {
-    setLoading(true);
-    setError(null);
     try {
-      const data = await authService.login(email, password);
-      setCurrentUser(data.user);
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-      throw err;
-    } finally {
-      setLoading(false);
+      await authService.login(email, password);
+      const userData = await authService.getCurrentUser();
+      setCurrentUser(userData);
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
   };
-
-  const register = async (userData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await authService.register(userData);
-      return response;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
+  // Logout function
   const logout = () => {
     authService.logout();
     setCurrentUser(null);
   };
-
+  
   const value = {
     currentUser,
     loading,
-    error,
-    login,
     register,
+    login,
     logout,
     isAuthenticated: authService.isAuthenticated
   };
-
+  
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -76,4 +73,13 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Hook kustom untuk menggunakan AuthContext
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export default AuthContext;

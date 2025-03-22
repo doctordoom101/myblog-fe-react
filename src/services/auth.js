@@ -1,41 +1,53 @@
-import { authApi } from './api';
+import api from './api';
 
-export const authService = {
+// Fungsi autentikasi untuk login dan registrasi
+const authService = {
+  register: async (username, email, password, passwordConfirm) => {
+    try {
+      const response = await api.users.register({
+        username,
+        email,
+        password,
+        password_confirm: passwordConfirm
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Registration failed' };
+    }
+  },
+
   login: async (email, password) => {
     try {
-      const response = await authApi.login({ email, password });
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        return response.data;
-      }
+      const response = await api.users.login({ email, password });
+      const { access, refresh } = response.data;
+      
+      // Simpan token di localStorage
+      localStorage.setItem('accessToken', access);
+      localStorage.setItem('refreshToken', refresh);
+      
+      return true;
     } catch (error) {
-      throw error;
+      throw error.response?.data || { message: 'Login failed' };
     }
   },
-  
-  register: async (userData) => {
-    try {
-      const response = await authApi.register(userData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
+
   logout: () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
   },
-  
+
   getCurrentUser: async () => {
     try {
-      const response = await authApi.getProfile();
+      const response = await api.users.getCurrentUser();
       return response.data;
     } catch (error) {
-      throw error;
+      return null;
     }
   },
-  
+
   isAuthenticated: () => {
-    return localStorage.getItem('token') ? true : false;
+    return !!localStorage.getItem('accessToken');
   }
 };
+
+export default authService;
