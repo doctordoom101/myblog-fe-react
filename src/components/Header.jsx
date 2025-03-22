@@ -13,40 +13,39 @@ const Header = () => {
 
   return (
     <header className="bg-gray-800 text-white shadow-md">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold">BlogApp</Link>
+      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold">MyBlog</Link>
         
-        <nav className="flex items-center space-x-4">
-          <Link to="/" className="hover:text-gray-300 transition-colors">Home</Link>
+        <nav className="flex items-center space-x-6">
+          <Link to="/" className="hover:text-gray-300">Home</Link>
           
           {isAuthenticated() ? (
             <>
-              <Link to="/create" className="hover:text-gray-300 transition-colors">New Post</Link>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm">{currentUser?.username}</span>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition-colors"
-                >
-                  Logout
+              <Link to="/create" className="hover:text-gray-300">New Post</Link>
+              <div className="relative group">
+                <button className="flex items-center hover:text-gray-300">
+                  <span className="mr-1">{currentUser?.username}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
+                  <Link to={`/profile/${currentUser?.username}`} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">Profile</Link>
+                  <Link to="/my-posts" className="block px-4 py-2 text-gray-800 hover:bg-gray-100">My Posts</Link>
+                  <button 
+                    onClick={handleLogout} 
+                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             </>
           ) : (
-            <div className="space-x-2">
-              <Link 
-                to="/login" 
-                className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm transition-colors"
-              >
-                Login
-              </Link>
-              <Link 
-                to="/register" 
-                className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition-colors"
-              >
-                Register
-              </Link>
-            </div>
+            <>
+              <Link to="/login" className="hover:text-gray-300">Login</Link>
+              <Link to="/register" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">Register</Link>
+            </>
           )}
         </nav>
       </div>
