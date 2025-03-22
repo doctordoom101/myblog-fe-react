@@ -1,49 +1,40 @@
-// src/components/BlogCard.jsx
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-const BlogCard = ({ blog }) => {
-  // Format date for display
-  const formattedDate = new Date(blog.created_at).toLocaleDateString();
-  
+const BlogCard = ({ post }) => {
+  // Format the date nicely
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Truncate content for preview
+  const truncateContent = (content, maxLength = 150) => {
+    if (content.length <= maxLength) return content;
+    return content.substr(0, maxLength) + '...';
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1">
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-2 truncate">
-          <Link to={`/blog/${blog.id}`} className="text-blue-600 hover:text-blue-800">
-            {blog.title}
-          </Link>
-        </h2>
+        <Link to={`/blog/${post.id}`}>
+          <h2 className="text-xl font-bold mb-2 hover:text-blue-600 transition-colors">{post.title}</h2>
+        </Link>
         
-        <div className="flex items-center text-gray-500 text-sm mb-3">
-          <span>{blog.author.username}</span>
+        <div className="flex items-center text-gray-500 text-sm mb-4">
+          <span>{post.user.username}</span>
           <span className="mx-2">•</span>
-          <span>{formattedDate}</span>
+          <span>{formatDate(post.created_at)}</span>
         </div>
         
-        <p className="text-gray-600 line-clamp-3 mb-4">
-          {blog.content.slice(0, 150)}
-          {blog.content.length > 150 ? '...' : ''}
-        </p>
+        <p className="text-gray-700 mb-4">{truncateContent(post.content)}</p>
         
-        <div className="flex justify-between items-center">
-          <Link 
-            to={`/blog/${blog.id}`} 
-            className="text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Read more
-          </Link>
-          
-          <div className="flex space-x-2">
-            {blog.categories.map((category, index) => (
-              <span 
-                key={index} 
-                className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs"
-              >
-                {category.name}
-              </span>
-            ))}
-          </div>
-        </div>
+        <Link 
+          to={`/blog/${post.id}`}
+          className="inline-block text-blue-600 font-medium hover:text-blue-800 transition-colors"
+        >
+          Read more &rarr;
+        </Link>
       </div>
     </div>
   );

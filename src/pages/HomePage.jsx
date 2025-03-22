@@ -1,96 +1,87 @@
-import { useState, useEffect } from 'react';
-import { blogApi } from '../services/api';
+import React, { useState, useEffect } from 'react';
 import BlogCard from '../components/BlogCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import api from '../services/api';
 
 const HomePage = () => {
-  const [blogs, setBlogs] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchPosts = async () => {
       try {
         setLoading(true);
-        const response = await blogApi.getAllBlogs(currentPage);
-        setBlogs(response.data.results);
-        setTotalPages(Math.ceil(response.data.count / 10)); // Assuming 10 items per page
+        const response = await api.posts.getAll(currentPage);
+        
+        // Check if we have more pages
+        if (response.data.results.length === 0) {
+          setHasMore(false);
+        } else {
+          setPosts(prevPosts => 
+            currentPage === 1 
+              ? response.data.results 
+              : [...prevPosts, ...response.data.results]
+          );
+          
+          // Check if we have more pages from pagination
+          setHasMore(!!response.data.next);
+        }
+        
+        setError(null);
       } catch (err) {
-        console.error('Error fetching blogs:', err);
-        setError('Failed to load blogs. Please try again later.');
+        setError('Failed to load blog posts. Please try again later.');
+        console.error('Error fetching posts:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBlogs();
+    fetchPosts();
   }, [currentPage]);
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const loadMorePosts = () => {
+    if (!loading && hasMore) {
+      setCurrentPage(prevPage => prevPage + 1);
     }
   };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  if (loading && blogs.length === 0) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return <div className="text-center text-red-500 py-8">{error}</div>;
-  }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-8 text-center">Latest Blog Posts</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold mb-2">Latest Blog Posts</h1>
+        <p className="text-gray-600">Discover thoughts, ideas, and stories from our community</p>
+      </div>
       
-      {blogs.length === 0 ? (
-        <p className="text-center text-gray-500">No blog posts available.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {blogs.map(blog => (
-            <BlogCard key={blog.id} blog={blog} />
-          ))}
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded-md mb-6">
+          {error}
         </div>
       )}
       
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-8 space-x-4">
-          <button 
-            onClick={handlePrevPage} 
-            disabled={currentPage === 1}
-            className={`px-4 py-2 rounded ${
-              currentPage === 1 
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map(post => (
+          <BlogCard key={post.id} post={post} />
+        ))}
+      </div>
+      
+      {loading && <div className="my-8"><LoadingSpinner /></div>}
+      
+      {!loading && posts.length === 0 && !error && (
+        <div className="text-center py-10">
+          <p className="text-xl text-gray-600">No posts found.</p>
+        </div>
+      )}
+      
+      {hasMore && !loading && (
+        <div className="text-center mt-8">
+          <button
+            onClick={loadMorePosts}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
           >
-            Previous
-          </button>
-          
-          <span className="px-4 py-2">
-            Page {currentPage} of {totalPages}
-          </span>
-          
-          <button 
-            onClick={handleNextPage} 
-            disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded ${
-              currentPage === totalPages 
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            Next
+            Load More
           </button>
         </div>
       )}

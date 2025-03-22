@@ -1,27 +1,24 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="bg-gray-800 text-white py-8">
+    <footer className="bg-gray-800 text-white py-6 mt-12">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
-            <Link to="/" className="text-xl font-bold">MyBlog</Link>
-            <p className="text-gray-400 mt-2">Share your thoughts with the world</p>
+            <h3 className="text-xl font-bold">BlogApp</h3>
+            <p className="text-gray-400 mt-1">Share your thoughts with the world</p>
           </div>
           
-          <div className="flex space-x-6">
-            <Link to="/" className="hover:text-gray-300">Home</Link>
-            <Link to="/about" className="hover:text-gray-300">About</Link>
-            <Link to="/contact" className="hover:text-gray-300">Contact</Link>
+          <div className="text-center md:text-right">
+            <p>&copy; {currentYear} BlogApp. All rights reserved.</p>
+            <div className="flex space-x-4 mt-2 justify-center md:justify-end">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a>
+            </div>
           </div>
-        </div>
-        
-        <div className="mt-8 pt-6 border-t border-gray-700 text-center text-gray-400">
-          <p>&copy; {currentYear} MyBlog. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -1,199 +1,193 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { blogApi } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const EditBlogPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currentUser, isAuthenticated } = useAuth();
   
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    categories: []
-  });
-  
-  const [availableCategories, setAvailableCategories] = useState([]);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [post, setPost] = useState(null);
 
-  // Fetch blog data and categories
+  // Redirect if not authenticated
   useEffect(() => {
-    const fetchData = async () => {
+    if (!isAuthenticated()) {
+      navigate('/login', { state: { from: `/edit/${id}`, message: 'You must be logged in to edit a post.' } });
+    }
+  }, [isAuthenticated, navigate, id]);
+
+  // Fetch post for editing
+  useEffect(() => {
+    const fetchPost = async () => {
       try {
         setLoading(true);
+        const response = await api.posts.get(id);
+        setPost(response.data);
         
-        // Fetch blog data
-        const blogResponse = await blogApi.getBlogById(id);
+        // Check if user is the author
+        if (currentUser && response.data.user.id !== currentUser.id) {
+          navigate(`/blog/${id}`, { 
+            state: { error: 'You are not authorized to edit this post.' } 
+          });
+          return;
+        }
         
-        // Fetch available categories
-        const categoriesResponse = await apiClient.get('/categories/');
-        
-        // Set form data with blog data
-        setFormData({
-          title: blogResponse.data.title,
-          content: blogResponse.data.content,
-          categories: blogResponse.data.categories.map(cat => cat.id)
-        });
-        
-        setAvailableCategories(categoriesResponse.data);
+        // Set form data
+        setTitle(response.data.title);
+        setContent(response.data.content);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load blog post. It might have been removed or you don\'t have permission.');
+        if (err.response && err.response.status === 404) {
+          navigate('/', { state: { error: 'Post not found.' } });
+        } else {
+          console.error('Error fetching post for editing:', err);
+          setErrors({ general: 'Failed to load post. Please try again.' });
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [id]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleCategoryChange = (e) => {
-    const options = e.target.options;
-    const selectedCategories = [];
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].selected) {
-        selectedCategories.push(options[i].value);
-      }
+    if (currentUser) {
+      fetchPost();
     }
-    setFormData(prev => ({
-      ...prev,
-      categories: selectedCategories
-    }));
+  }, [id, currentUser, navigate]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!title.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (title.length < 5) {
+      newErrors.title = 'Title must be at least 5 characters';
+    }
+    
+    if (!content.trim()) {
+      newErrors.content = 'Content is required';
+    } else if (content.length < 10) {
+      newErrors.content = 'Content must be at least 10 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.title.trim() || !formData.content.trim()) {
-      setError('Title and content are required.');
+    if (!validateForm()) {
       return;
     }
     
     try {
       setSubmitting(true);
-      setError(null);
+      await api.posts.update(id, {
+        title,
+        content
+      });
       
-      await blogApi.updateBlog(id, formData);
       navigate(`/blog/${id}`);
     } catch (err) {
-      console.error('Error updating blog:', err);
-      setError(err.response?.data?.message || 'Failed to update blog post. Please try again.');
+      console.error('Error updating post:', err);
+      
+      if (err.response && err.response.data) {
+        // Set form errors from API response
+        setErrors(err.response.data);
+      } else {
+        setErrors({ general: 'Failed to update post. Please try again.' });
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error && !formData.title) {
     return (
-      <div className="text-center">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button 
-          onClick={() => navigate('/')} 
-          className="text-blue-600 hover:underline"
-        >
-          Return to home page
-        </button>
+      <div className="container mx-auto px-4 py-12 flex justify-center">
+        <LoadingSpinner size="large" message="Loading post..." />
+      </div>
+    );
+  }
+  
+  if (!post && !loading) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="bg-red-100 text-red-700 p-6 rounded-lg max-w-2xl mx-auto">
+          <h2 className="text-xl font-bold mb-2">Error</h2>
+          <p>Post not found or you don't have permission to edit it.</p>
+          <Link to="/" className="inline-block mt-4 text-blue-600 hover:underline">
+            &larr; Back to Home
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Edit Blog Post</h1>
-      
-      {error && (
-        <div className="bg-red-100 text-red-700 p-4 rounded mb-6">
-          {error}
-        </div>
-      )}
-      
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Edit Blog Post</h1>
         
-        <div className="mb-4">
-          <label htmlFor="content" className="block text-gray-700 font-medium mb-2">
-            Content
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows="12"
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          ></textarea>
-        </div>
+        {errors.general && (
+          <div className="bg-red-100 text-red-700 p-4 rounded-md mb-6">
+            {errors.general}
+          </div>
+        )}
         
-        <div className="mb-6">
-          <label htmlFor="categories" className="block text-gray-700 font-medium mb-2">
-            Categories
-          </label>
-          <select
-            id="categories"
-            name="categories"
-            multiple
-            value={formData.categories}
-            onChange={handleCategoryChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {availableCategories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <p className="text-gray-500 text-sm mt-1">
-            Hold Ctrl (or Cmd) to select multiple categories
-          </p>
-        </div>
-        
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => navigate(`/blog/${id}`)}
-            className="px-4 py-2 text-gray-700 mr-4 hover:text-gray-900"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className={`px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${
-              submitting ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
-          >
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
+          <div className="mb-4">
+            <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              className={`w-full px-3 py-2 border ${errors.title ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter post title"
+            />
+            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+          </div>
+          
+          <div className="mb-6">
+            <label htmlFor="content" className="block text-gray-700 font-medium mb-2">
+              Content
+            </label>
+            <textarea
+              id="content"
+              className={`w-full px-3 py-2 border ${errors.content ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              rows="12"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Write your post content here..."
+            ></textarea>
+            {errors.content && <p className="text-red-500 text-sm mt-1">{errors.content}</p>}
+          </div>
+          
+          <div className="flex justify-between">
+            <Link
+              to={`/blog/${id}`}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+              disabled={submitting}
+            >
+              {submitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
