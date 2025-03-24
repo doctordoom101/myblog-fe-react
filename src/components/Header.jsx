@@ -43,8 +43,8 @@ const Header = () => {
             </>
           ) : (
             <>
-              <Link to="/login" className="hover:text-gray-300">Login</Link>
-              <Link to="/register" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">Register</Link>
+              <Link to="/login" className="hover:text-gray-300">Sign in</Link>
+              <Link to="/register" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">Sign up</Link>
             </>
           )}
         </nav>
