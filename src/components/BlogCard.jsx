@@ -22,6 +22,15 @@ const BlogCard = ({ post }) => {
         </Link>
         
         <div className="flex items-center text-gray-500 text-sm mb-4">
+          {post.user.profile_picture ? (
+            <img 
+              src={post.user.profile_picture} 
+              alt="Profile" 
+              className="w-8 h-8 rounded-full object-cover mr-2"
+            />
+          ) : (
+            <div className="w-8 h-8 bg-gray-300 rounded-full mr-2"></div>
+          )}
           <span>{post.user.username}</span>
           <span className="mx-2">•</span>
           <span>{formatDate(post.created_at)}</span>

@@ -86,6 +86,15 @@ const BlogDetailPage = () => {
           <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
           
           <div className="flex items-center text-gray-600 mb-6">
+            {post.user.profile_picture ? (
+              <img 
+                src={post.user.profile_picture} 
+                alt="Profile" 
+                className="w-8 h-8 rounded-full object-cover mr-2"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gray-300 rounded-full mr-2"></div>
+            )}
             <span className="font-medium">{post.user.username}</span>
             <span className="mx-2">•</span>
             <span>{formatDate(post.created_at)}</span>
